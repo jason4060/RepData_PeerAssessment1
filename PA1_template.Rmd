@@ -7,15 +7,41 @@ output:
 
 
 ## Loading and preprocessing the data
-
+activity <- read_csv("~/Downloads/activity.csv")
 
 
 ## What is mean total number of steps taken per day?
+library(dplyr)
 
+# Group by date and calculate the sum of steps for each date
+sum_steps_per_date <- data %>%
+  group_by(date) %>%
+  summarize(total_steps = sum(steps, na.rm = TRUE))
+
+print(sum_steps_per_date)
 
 
 ## What is the average daily activity pattern?
 
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Calculate the average number of steps for each 5-minute interval
+average_pattern <- activity  %>%
+  group_by(interval) %>%
+  summarize(average_steps = mean(steps, na.rm = TRUE))
+
+# Make a time series plot
+ggplot(average_pattern, aes(x = interval, y = average_steps)) +
+  geom_line(type = "l") +
+  labs(title = "Average Daily Activity Pattern",
+       x = "5-Minute Interval",
+       y = "Average Number of Steps")
+
+# Find the interval with the maximum average number of steps
+max_interval <- average_pattern$interval[which.max(average_pattern$average_steps)]
+print(paste("Interval with maximum average steps:", max_interval))
 
 
 ## Imputing missing values
@@ -23,3 +49,35 @@ output:
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+# Assuming you have a data frame named df with columns 'date' and 'steps' (with filled-in missing values)
+
+# Sample data frame
+df <- data.frame(
+  date = rep(seq(as.Date("2023-01-01"), as.Date("2023-01-10"), by = "days"), each = 5),
+  steps = c(100, 150, 120, 200, NA, 80, 90, 110, 130, 170, 50, 60, 70, 90, 110)
+)
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Convert 'date' to Date class
+activity$date <- as.Date(activity$date)
+
+# Create a new factor variable indicating whether a given date is a weekday or weekend day
+activity <- activity %>%
+  mutate(day_type = ifelse(weekdays(date) %in% c("Saturday", "Sunday"), "weekend", "weekday"))
+
+# Group by both interval and day_type, and calculate the average number of steps
+average_pattern <- activity %>%
+  group_by(interval, day_type) %>%
+  summarize(average_steps = mean(steps, na.rm = TRUE))
+
+# Make a panel plot
+ggplot(average_pattern, aes(x = interval, y = average_steps, group = day_type, color = day_type)) +
+  geom_line(type = "l") +
+  labs(title = "Activity Patterns - Weekdays vs. Weekends",
+       x = "5-Minute Interval",
+       y = "Average Number of Steps",
+       color = "Day Type") +
+  facet_wrap(~day_type, scales = "free_y")
